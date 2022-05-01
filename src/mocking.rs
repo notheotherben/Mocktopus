@@ -196,6 +196,7 @@ impl<'a> MockContext<'a> {
 
     /// Set up a function to be mocked.
     ///
+    /// # Safety
     /// This is an unsafe version of [`mock_safe`](#method.mock_safe),
     /// without lifetime constraint on mock
     pub unsafe fn mock_raw<I, O, F, M>(mut self, mockable: F, mock: M) -> Self

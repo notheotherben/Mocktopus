@@ -32,9 +32,12 @@ impl<'a> FnHeaderBuilder<'a> {
     pub fn build(&self, fn_decl: &Signature, fn_block_span: Span) -> Stmt {
         let fn_args = &fn_decl.inputs;
         let header_str = format!(
-            r#"unsafe {{
+            r#"
+            unsafe {{
                 extern crate mocktopus as {mocktopus};
                 extern crate std as {std_crate};
+
+                #[allow(clippy::forget_copy, clippy::forget_ref, clippy::forget_non_drop, clippy::needless_return)]
                 match {std_crate}::panic::catch_unwind({std_crate}::panic::AssertUnwindSafe (
                         || {mocktopus}::mocking::Mockable::call_mock(&{full_fn_name}, {extract_args}))) {{
                     Ok({mocktopus}::mocking::MockResult::Continue(mut {args_to_continue})) => {restore_args},

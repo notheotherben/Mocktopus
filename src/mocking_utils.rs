@@ -1,6 +1,7 @@
 /// Converts non-mutable reference to a mutable one
 ///
 /// Allows creating multiple mutable references to a single item breaking Rust's safety policy.
+/// 
 /// # Safety
 /// Use with extreme caution, may cause all sorts of mutability related undefined behaviors!
 ///
@@ -23,6 +24,7 @@
 ///     assert_eq!("mocked", get_string(&mut Context::default()));
 /// }
 /// ```
+#[allow(clippy::cast_ref_to_mut, clippy::mut_from_ref)]
 pub unsafe fn as_mut<T>(t_ref: &T) -> &mut T {
     &mut *(t_ref as *const T as *mut T)
 }

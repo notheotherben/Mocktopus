@@ -127,6 +127,7 @@ impl ErasedStoredMock {
 /// Guarantees that while mock is running it's not overwritten, destroyed, or called again
 #[derive(Clone)]
 struct StoredMock<I, O> {
+    #[allow(clippy::type_complexity)]
     mock: Rc<RefCell<Box<dyn FnMut<I, Output = MockResult<I, O>>>>>,
 }
 

@@ -1,4 +1,4 @@
-#![feature(const_fn, proc_macro_hygiene)]
+#![feature(const_mut_refs, proc_macro_hygiene)]
 
 // Test if injecting works even if mocktopus is aliased
 extern crate mocktopus as mocktopus_aliased;
