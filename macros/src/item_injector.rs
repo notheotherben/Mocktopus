@@ -100,12 +100,10 @@ fn inject_impl(item_impl: &mut ItemImpl) {
 }
 
 fn is_impl_fn_mockabile(builder: &FnHeaderBuilder, item_method: &ImplItemMethod) -> bool {
-    if let FnHeaderBuilder::TraitImpl(ref segments) = *builder {
+    if let FnHeaderBuilder::TraitImpl(segments) = *builder {
         if let Some(segment) = segments.last() {
-            if segment.arguments.is_empty() && segment.ident == "Drop" {
-                if item_method.sig.ident == "drop" {
-                    return false;
-                }
+            if segment.arguments.is_empty() && segment.ident == "Drop" && item_method.sig.ident == "drop" {
+                return false;
             }
         }
     }
@@ -115,7 +113,7 @@ fn is_impl_fn_mockabile(builder: &FnHeaderBuilder, item_method: &ImplItemMethod)
 fn inject_any_fn(
     context: Context,
     builder: &FnHeaderBuilder,
-    attrs: &Vec<Attribute>,
+    attrs: &[Attribute],
     fn_decl: &mut Signature,
     block: &mut Block,
 ) {
@@ -127,7 +125,7 @@ fn inject_any_fn(
         return;
     }
 
-    if let Some(_) = fn_decl.asyncness {
+    if fn_decl.asyncness.is_some() {
         inject_async_fn(context, attrs, fn_decl, block);
     }
 
@@ -140,7 +138,7 @@ fn inject_any_fn(
 // See: https://github.com/dtolnay/async-trait
 fn inject_async_fn(
     context: Context,
-    attrs: &Vec<Attribute>,
+    attrs: &[Attribute],
     outer_sig: &mut Signature,
     block: &mut Block,
 ) {
@@ -197,13 +195,10 @@ fn inject_async_fn(
                 _ => unreachable!(),
             };
             let under_self = Ident::new("_self", self_token.span);
-            match context {
-                Context::Impl { receiver, .. } => {
-                    *arg = parse_quote! {
-                        #under_self: &#lifetime #mutability #receiver
-                    };
-                }
-                _ => (),
+            if let Context::Impl { receiver, .. } = context {
+                *arg = parse_quote! {
+                    #under_self: &#lifetime #mutability #receiver
+                };
             };
         }
         Some(arg @ FnArg::Receiver(_)) => {
@@ -216,13 +211,10 @@ fn inject_async_fn(
                 _ => unreachable!(),
             };
             let under_self = Ident::new("_self", self_token.span);
-            match context {
-                Context::Impl { receiver, .. } => {
-                    *arg = parse_quote! {
-                        #under_self: #mutability #receiver
-                    };
-                }
-                _ => (),
+            if let Context::Impl { receiver, .. } = context {
+                *arg = parse_quote! {
+                    #under_self: #mutability #receiver
+                };
             };
         }
         _ => {}
@@ -234,7 +226,7 @@ fn inject_async_fn(
 
     // this is the standalone async fn
     let inner_fn = ItemFn {
-        attrs: attrs.clone(),
+        attrs: attrs.to_owned(),
         vis: Visibility::Inherited,
         sig: inner_sig,
         block: Box::new(block.clone()),
@@ -259,8 +251,8 @@ fn inject_async_fn(
             predicates: Punctuated::new(),
         });
 
-    let mut outer_sig_inputs = outer_sig.inputs.iter_mut();
-    while let Some(input) = outer_sig_inputs.next() {
+    let outer_sig_inputs = outer_sig.inputs.iter_mut();
+    for input in outer_sig_inputs {
         match input {
             arg
             @ FnArg::Receiver(Receiver {
@@ -377,7 +369,7 @@ fn unignore_fn_args(inputs: &mut Punctuated<FnArg, Comma>) {
 
 const INJECTOR_STOPPER_ATTRS: [&str; 2] = ["mockable", "not_mockable"];
 
-fn is_not_mockable(attrs: &Vec<Attribute>) -> bool {
+fn is_not_mockable(attrs: &[Attribute]) -> bool {
     attrs
         .iter()
         .filter_map(|a| a.path.segments.last())
@@ -567,8 +559,8 @@ fn replace_self_in_path(path: &mut syn::Path) {
 
 fn replace_self_in_token_stream(tokens: &mut TokenStream) {
     let mut out = Vec::new();
-    let mut iter = tokens.clone().into_iter().peekable();
-    while let Some(tt) = iter.next() {
+    let iter = tokens.clone().into_iter().peekable();
+    for tt in iter {
         match tt {
             TokenTree::Ident(mut ident) => {
                 if ident == "self" {

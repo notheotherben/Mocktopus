@@ -37,7 +37,7 @@ impl<'a> FnHeaderBuilder<'a> {
                 extern crate mocktopus as {mocktopus};
                 extern crate std as {std_crate};
 
-                #[allow(clippy::forget_copy, clippy::forget_ref, clippy::forget_non_drop, clippy::needless_return)]
+                #[allow(clippy::forget_copy, clippy::forget_ref, clippy::forget_non_drop)]
                 match {std_crate}::panic::catch_unwind({std_crate}::panic::AssertUnwindSafe (
                         || {mocktopus}::mocking::Mockable::call_mock(&{full_fn_name}, {extract_args}))) {{
                     Ok({mocktopus}::mocking::MockResult::Continue(mut {args_to_continue})) => {restore_args},
@@ -99,7 +99,7 @@ fn write_full_fn_name(
     match *builder {
         FnHeaderBuilder::StaticFn => (),
         FnHeaderBuilder::StructImpl | FnHeaderBuilder::TraitDefault => write!(f, "Self::")?,
-        FnHeaderBuilder::TraitImpl(ref path) => {
+        FnHeaderBuilder::TraitImpl(path) => {
             write!(f, "<Self as {}>::", display(|f| write_trait_path(f, path)))?
         }
     }
@@ -123,9 +123,7 @@ fn write_fn_generics(f: &mut Formatter, fn_decl: &Signature) -> Result<(), Error
         .generics
         .params
         .iter()
-        .filter_map(get_generic_param_name)
-        .map(|param| write!(f, "{},", param))
-        .collect()
+        .filter_map(get_generic_param_name).try_for_each(|param| write!(f, "{},", param))
 }
 
 fn get_generic_param_name(param: &GenericParam) -> Option<String> {
@@ -177,9 +175,9 @@ fn write_forget_args<T>(f: &mut Formatter, fn_args: &Punctuated<FnArg, T>) -> Re
     Ok(())
 }
 
-fn iter_fn_arg_names<'a, T>(
-    input_args: &'a Punctuated<FnArg, T>,
-) -> impl Iterator<Item = String> + 'a {
+fn iter_fn_arg_names<T>(
+    input_args: &'_ Punctuated<FnArg, T>,
+) -> impl Iterator<Item = String> + '_ {
     input_args.iter().map(|fn_arg| {
         match fn_arg {
             FnArg::Receiver(_) => return "self".to_string(),

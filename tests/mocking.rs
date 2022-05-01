@@ -73,7 +73,10 @@ mod panicking_inside_mock_is_safe {
     use super::*;
 
     #[mockable]
-    fn function(_has_drop: String) {}
+    fn function(has_drop: String) {
+        // NOTE: Giving this something to do so clippy doesn't get angry with us
+        assert!(!has_drop.is_empty());
+    }
 
     #[test]
     #[should_panic]

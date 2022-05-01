@@ -172,7 +172,7 @@ mod injector_injects_annotated_items {
 
         #[mockable]
         mod module {
-            pub mod module {
+            pub mod submodule {
                 pub fn function() -> &'static str {
                     "not mocked"
                 }
@@ -181,14 +181,14 @@ mod injector_injects_annotated_items {
 
         #[test]
         fn when_not_mocked_then_runs_normally() {
-            assert_eq!("not mocked", module::module::function());
+            assert_eq!("not mocked", module::submodule::function());
         }
 
         #[test]
         fn when_mocked_then_runs_mock() {
-            unsafe { module::module::function.mock_raw(|| MockResult::Return("mocked")) }
+            unsafe { module::submodule::function.mock_raw(|| MockResult::Return("mocked")) }
 
-            assert_eq!("mocked", module::module::function());
+            assert_eq!("mocked", module::submodule::function());
         }
     }
 
@@ -413,7 +413,7 @@ mod injector_does_not_inject_items_twice {
             use super::*;
 
             #[mockable]
-            pub mod mocked_mod {
+            pub mod mocked_submod {
                 pub fn mocked_fn(x: u32) -> u32 {
                     x * 2
                 }
@@ -422,16 +422,16 @@ mod injector_does_not_inject_items_twice {
 
         #[test]
         fn when_not_mocked_then_runs_normally() {
-            assert_eq!(2, mocked_mod::mocked_mod::mocked_fn(1));
+            assert_eq!(2, mocked_mod::mocked_submod::mocked_fn(1));
         }
 
         #[test]
         fn when_mocked_then_runs_mock() {
             unsafe {
-                mocked_mod::mocked_mod::mocked_fn.mock_raw(|x| MockResult::Continue((x + 1,)))
+                mocked_mod::mocked_submod::mocked_fn.mock_raw(|x| MockResult::Continue((x + 1,)))
             }
 
-            assert_eq!(4, mocked_mod::mocked_mod::mocked_fn(1));
+            assert_eq!(4, mocked_mod::mocked_submod::mocked_fn(1));
         }
     }
 }
@@ -538,7 +538,7 @@ mod injector_does_not_inject_not_mockable_items {
             use super::*;
 
             #[not_mockable]
-            pub mod mocked_mod {
+            pub mod mocked_submod {
                 pub fn not_mocked_fn() -> &'static str {
                     "not mocked"
                 }
@@ -547,16 +547,16 @@ mod injector_does_not_inject_not_mockable_items {
 
         #[test]
         fn when_not_mocked_then_runs_normally() {
-            assert_eq!("not mocked", mocked_mod::mocked_mod::not_mocked_fn());
+            assert_eq!("not mocked", mocked_mod::mocked_submod::not_mocked_fn());
         }
 
         #[test]
         fn when_mocked_then_runs_normally() {
             unsafe {
-                mocked_mod::mocked_mod::not_mocked_fn.mock_raw(|| MockResult::Return("mocked"))
+                mocked_mod::mocked_submod::not_mocked_fn.mock_raw(|| MockResult::Return("mocked"))
             }
 
-            assert_eq!("not mocked", mocked_mod::mocked_mod::not_mocked_fn());
+            assert_eq!("not mocked", mocked_mod::mocked_submod::not_mocked_fn());
         }
     }
 }
